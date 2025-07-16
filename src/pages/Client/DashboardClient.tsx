@@ -1,14 +1,24 @@
+//src/pages/Client/DashboardClient.tsx
 import React, { useEffect, useState } from "react";
 import { Client } from "../../model/Client";
 import { useNavigate } from "react-router-dom";
 import { FooterPag } from "../../components/Footer";
+import { useAuth } from "../../auth/hook/useAuth";
+import { ClientHeader } from "../../components/ClientHeader";
 
 const ClientDashboard: React.FC = () => {
   const [client, setClient] = useState<Client | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
+
+
+const handleLogout = () => {
+  logout();
+  navigate("/"); // o "/login" si tenés una ruta específica
+};
   //planes
   const [activeNutritionPlanId, setActiveNutritionPlanId] = useState<
     number | null
@@ -86,13 +96,12 @@ const ClientDashboard: React.FC = () => {
 
         if (nutritionResponse.ok) {
           const nutritionData = await nutritionResponse.json();
-            setActiveNutritionPlanId(nutritionData.id);
-   
+          setActiveNutritionPlanId(nutritionData.id);
         }
 
         // Obtener plan de entrenamiento activo
         const trainingResponse = await fetch(
-          `http://localhost:8080/api/v1/training-plans/clients/${clientDni}/active`,
+          `http://localhost:8080/api/v1/clients/${clientDni}/training-plans/active`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -155,7 +164,6 @@ const ClientDashboard: React.FC = () => {
           },
           body: JSON.stringify({
             goal: editedGoal,
-            // Agrega otros campos si es necesario según tu ClientUpdateRequestDto
           }),
         }
       );
@@ -213,20 +221,9 @@ const ClientDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="bg-indigo-800 text-white shadow-md">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">FITPOWER</h1>
-          <div className="flex items-center space-x-3">
-            <span className="font-medium">
-              {client.name} {client.lastName}
-            </span>
-<div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center font-bold">
-  {client.name.split(" ").map((n) => n[0]).join("") + client.lastName.split(" ").map((n) => n[0]).join("")}
-</div>
+      <ClientHeader fullName={client.name + " " + client.lastName} onLogout={handleLogout} />
 
-          </div>
-        </div>
-      </header>
+
 
       {/* Navigation */}
       <nav className="bg-white shadow-sm">
@@ -372,53 +369,71 @@ const ClientDashboard: React.FC = () => {
           </section>
 
           {/* Quick Actions Card */}
-<section className="bg-white rounded-lg shadow-sm p-6">
-  <h3 className="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">
-    Acciones Rápidas
-  </h3>
-  <div className="grid grid-cols-2 gap-4">
-    <button
-      className="flex flex-col items-center justify-center p-4 bg-white border border-gray-200 rounded-lg hover:border-indigo-300 hover:shadow-md transition-all"
-      onClick={handleNavigateToTrainingRecords}
-      disabled={fetchingPlans || !activeTrainingPlanId}
-    >
-      <div className="text-3xl mb-2">📝</div>
-      <span className="text-sm font-medium text-center">
-        {fetchingPlans ? "Cargando..." : "Registrar entrenamiento"}
-      </span>
-      {!activeTrainingPlanId && !fetchingPlans && (
-        <span className="text-xs text-red-500 mt-1">Sin plan activo</span>
-      )}
-    </button>
-    <button 
-      className="flex flex-col items-center justify-center p-4 bg-white border border-gray-200 rounded-lg hover:border-indigo-300 hover:shadow-md transition-all"
-      onClick={handleNavigateToNutritionRecords}
-      disabled={fetchingPlans || !activeNutritionPlanId}
-    >
-      <div className="text-3xl mb-2">🍽️</div>
-      <span className="text-sm font-medium text-center">
-        {fetchingPlans ? "Cargando..." : "Registrar comida"}
-      </span>
-      {!activeNutritionPlanId && !fetchingPlans && (
-        <span className="text-xs text-red-500 mt-1">Sin plan activo</span>
-      )}
-    </button>
-      <button
-    className="flex flex-col items-center justify-center p-4 bg-white border border-gray-200 rounded-lg hover:border-indigo-300 hover:shadow-md transition-all"
-    onClick={() => navigate(`/client/history/${client.dni}`)}
-  >
-    <div className="text-3xl mb-2">📜</div>
-    <span className="text-sm font-medium text-center">Ver mi historial</span>
-  </button>
-        <button
-    className="flex flex-col items-center justify-center p-4 bg-white border border-gray-200 rounded-lg hover:border-indigo-300 hover:shadow-md transition-all"
-    onClick={() => navigate(`/client/${client.dni}/progress`)}
-  >
-    <div className="text-3xl mb-2">📊</div>
-    <span className="text-sm font-medium text-center">Ver mi progreso</span>
-  </button>
-  </div>
-</section>
+          <section className="bg-white rounded-lg shadow-sm p-6">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">
+              Acciones Rápidas
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                className="flex flex-col items-center justify-center p-4 bg-white border border-gray-200 rounded-lg hover:border-indigo-300 hover:shadow-md transition-all"
+                onClick={handleNavigateToTrainingRecords}
+                disabled={fetchingPlans || !activeTrainingPlanId}
+              >
+                <div className="text-3xl mb-2">📝</div>
+                <span className="text-sm font-medium text-center">
+                  {fetchingPlans ? "Cargando..." : "Registrar entrenamiento"}
+                </span>
+                {!activeTrainingPlanId && !fetchingPlans && (
+                  <span className="text-xs text-red-500 mt-1">
+                    Sin plan activo
+                  </span>
+                )}
+              </button>
+              <button
+                className="flex flex-col items-center justify-center p-4 bg-white border border-gray-200 rounded-lg hover:border-indigo-300 hover:shadow-md transition-all"
+                onClick={handleNavigateToNutritionRecords}
+                disabled={fetchingPlans || !activeNutritionPlanId}
+              >
+                <div className="text-3xl mb-2">🍽️</div>
+                <span className="text-sm font-medium text-center">
+                  {fetchingPlans ? "Cargando..." : "Registrar comida"}
+                </span>
+                {!activeNutritionPlanId && !fetchingPlans && (
+                  <span className="text-xs text-red-500 mt-1">
+                    Sin plan activo
+                  </span>
+                )}
+              </button>
+              <button
+                className="flex flex-col items-center justify-center p-4 bg-white border border-gray-200 rounded-lg hover:border-indigo-300 hover:shadow-md transition-all"
+                onClick={() => navigate(`/client/history/${client.dni}`)}
+              >
+                <div className="text-3xl mb-2">📜</div>
+                <span className="text-sm font-medium text-center">
+                  Ver mi historial
+                </span>
+              </button>
+              <button
+                className="flex flex-col items-center justify-center p-4 bg-white border border-gray-200 rounded-lg hover:border-indigo-300 hover:shadow-md transition-all"
+                onClick={() => navigate(`/client/${client.dni}/progress`)}
+              >
+                <div className="text-3xl mb-2">📊</div>
+                <span className="text-sm font-medium text-center">
+                  Ver mi progreso
+                </span>
+              </button>
+              <button
+  className="flex flex-col items-center justify-center p-4 bg-white border border-gray-200 rounded-lg hover:border-green-300 hover:shadow-md transition-all"
+  onClick={() => navigate(`/client/${client.dni}/progress/nutrition`)}
+>
+  <div className="text-3xl mb-2">🥗</div>
+  <span className="text-sm font-medium text-center">
+    Ver progreso nutricional
+  </span>
+</button>
+                
+            </div>
+          </section>
         </div>
       </main>
 
